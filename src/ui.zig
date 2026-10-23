@@ -5,7 +5,9 @@ const compose = @import("compose.zig");
 const dict = @import("dict.zig");
 const document = @import("document.zig");
 const keymap = @import("keymap.zig");
+const logo = @import("logo.zig");
 const settings = @import("settings.zig");
+const theme = @import("theme.zig");
 
 const editor_size: f32 = 22;
 
@@ -38,27 +40,73 @@ pub fn frame(state: *AppState) !dvui.App.Result {
         scaler.deinit();
     }
 
-    var root = dvui.box(@src(), .{ .dir = .vertical }, .{ .expand = .both, .margin = dvui.Rect.all(8) });
+    var root = dvui.box(@src(), .{ .dir = .vertical }, .{
+        .expand = .both,
+        .background = true,
+        .style = .window,
+        .padding = .{ .x = 16, .y = 14, .w = 16, .h = 14 },
+    });
     defer root.deinit();
 
-    toolbar(state);
+    titleBar(state);
     optionRow(state);
 
-    var body = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .both });
+    var body = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .both, .margin = .{ .y = 8 } });
     defer body.deinit();
     editor(state);
     panel(state);
     return .ok;
 }
 
-fn toolbar(state: *AppState) void {
-    var bar = dvui.box(@src(), .{ .dir = .horizontal }, .{ .expand = .horizontal });
+fn titleBar(state: *AppState) void {
+    var bar = dvui.box(@src(), .{ .dir = .horizontal }, .{
+        .expand = .horizontal,
+        .padding = .{ .h = 12 },
+    });
     defer bar.deinit();
+
+    _ = dvui.image(@src(), .{
+        .source = .{ .imageFile = .{
+            .bytes = logo.mark_png,
+            .name = "deztype-mark",
+        } },
+    }, .{
+        .min_size_content = .{ .w = 40, .h = 40 },
+        .gravity_y = 0.5,
+        .label = .{ .text = "Deztype" },
+    });
+
+    {
+        var names = dvui.box(@src(), .{ .dir = .vertical }, .{
+            .gravity_y = 0.5,
+            .margin = .{ .x = 12, .w = 18 },
+        });
+        defer names.deinit();
+        {
+            var word = dvui.box(@src(), .{ .dir = .horizontal }, .{ .padding = .{}, .margin = .{} });
+            defer word.deinit();
+            const title = dvui.themeGet().font_title;
+            dvui.label(@src(), "Dez", .{}, .{ .font = title, .margin = .{}, .padding = .{} });
+            dvui.label(@src(), "type", .{}, .{
+                .font = title,
+                .color_text = .{ .color = theme.pine },
+                .margin = .{},
+                .padding = .{},
+            });
+        }
+        dvui.label(@src(), "Deseret alphabet", .{}, .{
+            .font = textFont(false, 13),
+            .color_text = .{ .color = theme.muted },
+            .margin = .{ .y = 1 },
+        });
+    }
 
     for (std.enums.values(settings.Mode)) |mode| {
         if (dvui.button(@src(), mode.label(), .{}, .{
             .id_extra = @intFromEnum(mode),
             .style = if (state.mode == mode) .highlight else .control,
+            .gravity_y = 0.5,
+            .margin = .{ .x = 3, .w = 3 },
         })) {
             setMode(state, mode);
         }
@@ -67,11 +115,11 @@ fn toolbar(state: *AppState) void {
     var spacer = dvui.box(@src(), .{}, .{ .expand = .horizontal });
     spacer.deinit();
 
-    if (dvui.button(@src(), "Copy", .{}, .{})) {
+    if (dvui.button(@src(), "Copy", .{}, .{ .gravity_y = 0.5, .margin = .{ .x = 3, .w = 3 } })) {
         copyPage(state);
         armFocus(state);
     }
-    if (dvui.button(@src(), "Clear", .{}, .{})) {
+    if (dvui.button(@src(), "Clear", .{}, .{ .gravity_y = 0.5, .margin = .{ .x = 3 } })) {
         attempt(state.doc.flush(state.mode, state.settings, dict.embedded));
         state.doc.clear();
         armFocus(state);
@@ -129,8 +177,10 @@ fn editor(state: *AppState) void {
     var box = dvui.box(@src(), .{ .dir = .vertical }, .{
         .expand = .both,
         .background = true,
-        .border = dvui.Rect.all(2),
-        .padding = dvui.Rect.all(8),
+        .border = dvui.Rect.all(1),
+        .corners = dvui.CornerRect.round(8),
+        .padding = .{ .x = 14, .y = 12, .w = 14, .h = 12 },
+        .color_fill = .{ .color = theme.paper },
         .color_border = border,
         .tab_index = 1,
     });
@@ -284,7 +334,14 @@ fn hint(state: *AppState) void {
         .map => "Each key is a letter. Shift capitalizes. Option types the number or punctuation. The caret moves with the keyboard. Copy copies the whole page.",
         .translate => "Looked up in the CMU dictionary. Click another pronunciation when a word has more than one. AH, including schwa, is written with short o. The caret moves with the keyboard. Copy copies the whole page.",
     };
-    const tl = openText(@src(), .{ .expand = .horizontal, .background = false, .padding = .{}, .margin = .{}, .font = textFont(false, 14) });
+    const tl = openText(@src(), .{
+        .expand = .horizontal,
+        .background = false,
+        .padding = .{},
+        .margin = .{ .h = 8 },
+        .font = textFont(false, 14),
+        .color_text = .{ .color = theme.muted },
+    });
     defer tl.deinit();
     tl.addText(text, .{});
 }
@@ -349,10 +406,13 @@ fn panel(state: *AppState) void {
         .expand = .vertical,
         .min_size_content = .{ .w = 340, .h = 0 },
         .max_size_content = .width(380),
-        .margin = .{ .x = 8 },
+        .margin = .{ .x = 12 },
         .background = true,
         .border = dvui.Rect.all(1),
-        .padding = dvui.Rect.all(4),
+        .corners = dvui.CornerRect.round(8),
+        .padding = .{ .x = 8, .y = 8, .w = 8, .h = 8 },
+        .color_fill = .{ .color = theme.paper },
+        .color_border = .{ .color = theme.line },
     });
     defer side.deinit();
 
@@ -364,7 +424,10 @@ fn panel(state: *AppState) void {
 }
 
 fn keyboard(state: *AppState) void {
-    dvui.label(@src(), "On-screen keys", .{}, .{ .font = textFont(false, 14) });
+    dvui.label(@src(), "On-screen keys", .{}, .{
+        .font = dvui.themeGet().font_heading,
+        .margin = .{ .x = 4, .y = 2, .h = 6 },
+    });
     for (keymap.rows, 0..) |row, row_i| {
         var line = dvui.box(@src(), .{ .dir = .horizontal }, .{ .id_extra = row_i });
         defer line.deinit();
@@ -393,7 +456,11 @@ fn keyboard(state: *AppState) void {
 }
 
 fn chart(state: *AppState) void {
-    dvui.label(@src(), "Letters", .{}, .{ .font = textFont(false, 14), .id_extra = 1 });
+    dvui.label(@src(), "Letters", .{}, .{
+        .font = dvui.themeGet().font_heading,
+        .margin = .{ .x = 4, .y = 4, .h = 6 },
+        .id_extra = 1,
+    });
     if (state.settings.book_alphabet and (state.mode == .compose or state.mode == .translate)) {
         const note = openText(@src(), .{ .expand = .horizontal, .background = false, .padding = .{}, .font = textFont(false, 13) });
         defer note.deinit();

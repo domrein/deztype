@@ -6,4 +6,5 @@ test {
     _ = @import("translate.zig");
     _ = @import("dict.zig");
     _ = @import("document.zig");
+    _ = @import("logo.zig");
 }
