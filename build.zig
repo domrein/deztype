@@ -83,6 +83,7 @@ pub fn build(b: *std.Build) void {
     web_step.dependOn(&install_wasm.step);
     web_step.dependOn(&b.addInstallFileWithDir(index_html, .{ .custom = "web" }, "index.html").step);
     web_step.dependOn(&b.addInstallFileWithDir(dvui_web.path("src/backends/web.js"), .{ .custom = "web" }, "web.js").step);
+    web_step.dependOn(&b.addInstallFileWithDir(b.path("web/favicon.png"), .{ .custom = "web" }, "favicon.png").step);
 
     const serve_exe = b.addExecutable(.{
         .name = "serve",
@@ -133,6 +134,7 @@ fn addMacUniversal(b: *std.Build, step: *std.Build.Step) void {
     const contents = "release/macos-universal/Deztype.app/Contents";
     step.dependOn(&b.addInstallFileWithDir(universal, .{ .custom = contents ++ "/MacOS" }, "Deztype").step);
     step.dependOn(&b.addInstallFileWithDir(b.path("assets/macos/Info.plist"), .{ .custom = contents }, "Info.plist").step);
+    step.dependOn(&b.addInstallFileWithDir(b.path("assets/macos/AppIcon.icns"), .{ .custom = contents ++ "/Resources" }, "AppIcon.icns").step);
     addLicenses(b, step, contents ++ "/Resources");
 }
 
@@ -170,6 +172,11 @@ fn addApp(
     if (target.result.os.tag == .windows and windows_gui and optimize != .Debug) {
         exe.subsystem = .windows;
     }
+    // Ignored on targets that are not Windows. The icon is the same mark as
+    // the SDL window icon, packed as a multi-resolution .ico.
+    exe.root_module.addWin32ResourceFile(.{
+        .file = b.path("assets/windows/deztype.rc"),
+    });
     // An explicit macOS arch is a cross target. Passing any -L drops Zig's
     // default framework search, and the framework dir alone hides usr/include
     // (libDER/DERItem.h). All three SDK dirs have to be set together, on the
