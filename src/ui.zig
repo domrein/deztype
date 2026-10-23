@@ -143,7 +143,7 @@ fn editor(state: *AppState) void {
         state.refocus = false;
         state.editor_focused = true;
     }
-    const focused = dvui.focusedWidgetId() == wd.id;
+    var focused = dvui.focusedWidgetId() == wd.id;
     if (focused) dvui.wantTextInput(wd.borderRectScale().r.toNatural());
 
     var swallow_one = false;
@@ -151,9 +151,19 @@ fn editor(state: *AppState) void {
         if (!dvui.eventMatch(event, .{ .id = wd.id, .r = wd.borderRectScale().r })) continue;
         switch (event.evt) {
             .mouse => |me| {
-                if (me.action == .press and (me.button == .left or me.button == .touch0)) {
-                    // Leave the event unhandled so pronunciation buttons still see the click.
+                if (me.action == .focus) {
+                    // A click is a focus event followed by a press. An unhandled
+                    // focus event clears focus, and the text scroller would
+                    // take it. Claim it here. Leave the press unhandled so
+                    // pronunciation buttons still see the click.
+                    event.handle(@src(), wd);
                     dvui.focusWidget(wd.id, null, null);
+                    focused = true;
+                    state.editor_focused = true;
+                    dvui.wantTextInput(wd.borderRectScale().r.toNatural());
+                } else if (me.action == .press and (me.button == .left or me.button == .touch0)) {
+                    dvui.focusWidget(wd.id, null, null);
+                    focused = true;
                     state.editor_focused = true;
                 }
             },
