@@ -1,5 +1,11 @@
 # Deztype
 
+[![Download for Windows](https://img.shields.io/badge/Download-Windows-2ea44f?style=for-the-badge)](https://github.com/domrein/deztype/releases/latest/download/Deztype-windows-x86_64.zip)
+[![Download for Mac](https://img.shields.io/badge/Download-macOS-2ea44f?style=for-the-badge)](https://github.com/domrein/deztype/releases/latest/download/Deztype-macos-universal.zip)
+[![Download for Linux](https://img.shields.io/badge/Download-Linux-2ea44f?style=for-the-badge)](https://github.com/domrein/deztype/releases/latest/download/Deztype-linux-x86_64.zip)
+
+The buttons download Deztype 0.0.1. On Mac, unzip and open Deztype. It is a universal app for macOS 13 and later, signed and notarized. On Windows, unzip and run Deztype.exe. On Linux, unzip, and run `./Deztype`. That build needs glibc 2.31 or newer and a display server.
+
 Deztype is a Deseret-alphabet editor. Deseret is a phonemic alphabet, so the app types sounds rather than English spelling. The same Zig code builds a native window and a page you can host.
 
 The caret moves with the keyboard. Clicking in the text does not place it. Copy copies the whole page.
@@ -33,6 +39,17 @@ zig build run
 ```
 
 `zig build test` covers the composer, the key maps, the translator, and the packed dictionary. It does not link SDL.
+
+`zig build release` writes the desktop builds, the same shape as the Dez Games:
+
+| Host | Artifacts |
+| --- | --- |
+| Mac | `zig-out/release/macos-universal/Deztype.app`, `zig-out/release/windows-x86_64/Deztype.exe`, and `zig-out/release/linux-x86_64/Deztype` |
+| Linux | the Linux binary and the Windows exe |
+
+The Mac app is universal (Apple Silicon and Intel) and its minimum system version is 13.0. The Windows file is a 64-bit GUI program. The Linux file is x86_64, built for glibc 2.31, and opens X11 or Wayland when it runs. SDL's Zig package vendors its libraries, so the Linux binary cross-compiles from a Mac.
+
+Each of those folders includes `CMUdict.txt` and `OFL-Deseret.txt`. A published Mac build is Developer ID signed, notarized, and stapled. Rebuilds have to be signed again, because Zig leaves an ad-hoc signature. The Windows exe is Authenticode signed. Linux is unsigned.
 
 The web app is the same program, compiled for the browser:
 

@@ -1,7 +1,7 @@
 .{
     .name = .deztype,
     .fingerprint = 0xa454593a26b0b6c4,
-    .version = "0.0.0",
+    .version = "0.0.1",
     .minimum_zig_version = "0.16.0",
     .dependencies = .{
         .dvui = .{
@@ -15,6 +15,7 @@
         "src",
         "tools",
         "web",
+        "assets",
         "LICENSES",
         "README.md",
     },
